@@ -53,6 +53,11 @@ These are read by `scripts/Figure6/build_network.py` to construct the NetworkX g
 
 This file is processed by `scripts/Figure4/plot_ss_heatmap.py` and `scripts/Figure4/classify_switches_final.py`.
 
+### `Flow_Cyto/`
+| File | Description |
+|------|-------------|
+| `spcas9_flow_cyto.xlsx` | Experimental flow-cytometry source data: GFP-low and GFP-high percentages for SpCas9 variant constructs at 24, 48, and 72 h, in triplicate. These values are embedded in `scripts/Figure8/Figure8.py` to produce the flow-cytometry validation figure. |
+
 ---
 
 ## Notes

@@ -34,11 +34,12 @@ The revision distinguishes five independently filtered MD evidence categories fr
 │       │                              #   discordance tables, and directionality tables
 │       ├── CB_VESM_discordance/       # CB × VESM × DMS merged tables
 │       └── CB_directionality/         # CB state-bias and enrichment tables
-├── raw_data/                          # Raw computation outputs (direct from MD tools)
+├── raw_data/                          # Raw computation and experimental outputs
 │   ├── RMSF/                          # Per-replica rmsf.xvg files (GROMACS output)
 │   ├── Interaction_Network/           # Per-state competitive_salt_bridges / hydrophobic CSVs
 │   ├── GCCM_Network/                  # Raw GCCM matrices (gccm_full.dat) per state
-│   └── Global_Secondary_Structure/    # Raw per-residue secondary structure fractions
+│   ├── Global_Secondary_Structure/    # Raw per-residue secondary structure fractions
+│   └── Flow_Cyto/                     # Flow-cytometry source data (spcas9_flow_cyto.xlsx)
 ├── scripts/                           # All analysis and figure-generation scripts
 │   ├── Figure2/                       # PCA porcupine-plot (conformational transition vectors)
 │   ├── Figure3/                       # Domain-level RMSF dynamics
