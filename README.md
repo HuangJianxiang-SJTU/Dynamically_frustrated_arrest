@@ -1,7 +1,8 @@
 # A dynamically frustrated allosteric checkpoint consistent with conformational proofreading in CRISPR-Cas9
 
-> **Status:** Revised manuscript submitted to *Nucleic Acids Research* (NAR-02689-H-2026)  
-> **Correspondence:** Shaoyong Lu (lushaoyong@sjtu.edu.cn)
+> **Status:** Manuscript under review at *Nucleic Acids Research*  
+> **Authors:** Jianxiang Huang and Shaoyong Lu  
+> **Correspondence:** Jianxiang Huang (jxhuang@sjtu.edu.cn)
 
 ## Overview
 
@@ -45,6 +46,7 @@ The revision distinguishes five independently filtered MD evidence categories fr
 │   ├── Figure5/                       # Allosteric interaction network pipeline
 │   ├── Figure6/                       # GCCM network: centrality, community, path impedance
 │   ├── Figure7/                       # CB vs VESM discordance analysis
+│   ├── Figure8/                       # Flow-cytometry validation (experimental)
 │   └── supplementary/                 # Supplementary figure scripts & AI validation pipeline
 │       └── AI-dms-validation/
 │           ├── VESM-CB/               # PDB cleaning, VESM scoring, CB scoring pipeline
@@ -56,6 +58,7 @@ The revision distinguishes five independently filtered MD evidence categories fr
     ├── Figure5/
     ├── Figure6/
     ├── Figure7/
+    ├── Figure8/
     └── supplenmentary/
 ```
 
