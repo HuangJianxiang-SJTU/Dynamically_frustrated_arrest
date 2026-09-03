@@ -267,7 +267,7 @@ def summarise(df, tag):
         # 将你的 MD 残基优先按照 Super-Hub 重叠次数排序，其次按进化保守度排序
         md_hits = md_hits.sort_values(by=["Hub_Overlap_Count", "mean_LLR"], ascending=[False, True])
         
-        print(f"\n── Your MD switch residues ranked by Hub Overlap & VESM constraint ──")
+        print(f"\n── MD residues ranked by category overlap and VESM substitution intolerance ──")
         print(f"   ({len(md_hits)} residues found in full scan)")
         print(md_hits[cols_to_print].to_string(index=False))
 

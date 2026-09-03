@@ -1,0 +1,1 @@
+scripts/Figure2/every50th_frame.xtc filter=lfs diff=lfs merge=lfs -text

@@ -34,9 +34,12 @@ All files here are used directly as inputs to the plotting scripts in `scripts/`
 | File | Description |
 |------|-------------|
 | `gccm/{state}/network_G_nierzwicki.pkl` | NetworkX graph object encoding the GCCM-weighted contact network for each state (6-nt through 18-nt). Edge weights reflect generalised correlation × contact frequency. |
-| `community_summary.txt` | Louvain community assignments for each residue at each state, used for community heatmap and size plots. |
+| `community_summary.txt` | Reported weighted Girvan–Newman community assignments for each residue and state. GCCM-derived impedance is used as the edge distance, and the maximum-modularity partition along the edge-betweenness dendrogram is retained (Q = 0.79–0.82). |
 | `Betweenness_Ranked.csv` | Ranked list of residues by betweenness centrality across R-loop states. |
 | `Dynamic_Variance_Hubs_Ranked.csv` | Residues ranked by variance in betweenness centrality across states (dynamic centrality hubs). |
+| `Full_Betweenness_Centrality.csv` | Weighted betweenness centrality for all 1,368 residues in all seven states. |
+| `Betweenness_Elbow.png/.pdf` | Kneedle check on the complete peak-centrality ranking; the verified elbow is rank 89 (peak centrality 0.0823457336). |
+| `Elbow_Analysis.png/.pdf` | Elbow/threshold audit for the other independently filtered MD evidence categories. |
 
 ### `AI-validation-[CB,VESM]/`
 | File / Sub-folder | Description |
@@ -44,19 +47,20 @@ All files here are used directly as inputs to the plotting scripts in `scripts/`
 | `raw_pdb/` | Cleaned PDB structures for each R-loop state (6-nt through 18-nt, one chain), used as input to ProteinMPNN. |
 | `CB_log_{n}_vs_{n+2}.txt` | ProteinMPNN conditional probability (CB) log files for each consecutive state-pair transition. |
 | `CB_results_{n}_vs_{n+2}_proteinmpnn/` | `variants.csv` and `position_summary.csv` for each transition: per-variant CB scores and per-position summaries. |
-| `SpCas9_VESM3B_full_variants.csv` | Full saturation mutagenesis scores (log-likelihood ratio) from VESM-3B for all 1368 positions × 19 substitutions. |
-| `SpCas9_VESM3B_full_position_summary.csv` | Per-position summary of VESM-3B LLR scores (mean LLR per position). |
-| `full_superset.csv` | Combined MD-annotation superset table: one row per residue with flags for each hub category (Allosteric Switch, GCCM Hub, SB Hub, Hydrophobic Hub, Betweenness Centrality). |
+| `SpCas9_VESM3B_full_variants.csv` | Full saturation-mutagenesis log-likelihood ratios from VESM (ESM2-3B backbone loaded with VESM distilled weights) for all 1,368 positions × 19 substitutions. |
+| `SpCas9_VESM3B_full_position_summary.csv` | Per-position VESM summary. The reported sign-inverted mean LLR is model-inferred substitution intolerance, not direct sequence conservation. |
+| `full_superset.csv` | Union of the five independently filtered MD evidence categories (311 unique residues). Column `n` records the number of supporting categories. |
+| `MD_key_residues_multi_evidence.csv` | Final stringent MD key-residue set: the 52 residues supported by at least two independent MD categories (`n >= 2`). |
 | `cb_vesm_dms_triple.py` | Script that reads `CB_VESM_discordance/cb_vesm_quadrant_table.csv` and `DMS_reference/spencer-zhang-data.csv` to produce the three-way CB × VESM × DMS validation figure. Run from the `AI-validation-[CB,VESM]/CB_VESM_discordance/` directory. |
 | `DMS_reference/spencer-zhang-data.csv` | Deep mutational scanning (DMS) data for SpCas9 from Spencer & Zhang 2017 (see reference below). Used as an orthogonal experimental reference for AI-predicted functional importance scores. |
 
 #### `AI-validation-[CB,VESM]/CB_VESM_discordance/`
 | File | Description |
 |------|-------------|
-| `cb_vesm_quadrant_table.csv` | Per-position table with CB driving force, VESM constraint, MD hub annotations, and quadrant assignment (Q1–Q4). Produced by `scripts/Figure7/plot_CB_VESM_discordance.py`. |
+| `cb_vesm_quadrant_table.csv` | Per-position table with CB driving force, VESM substitution intolerance, MD hub annotations, and quadrant assignment (Q1–Q4). Produced by `scripts/Figure7/plot_CB_VESM_discordance.py`. |
 | `cb_vesm_dms_merged.csv` | Merged table adding DMS tolerance columns to the quadrant table. Produced by `cb_vesm_dms_triple.py`. |
 | `variant_level_merged.csv` | Variant-level (position × mutation) table merging CB scores, VESM LLR, DMS log₂FC, and MD annotations. |
-| `per_domain_correlations.csv` | Spearman correlation between VESM constraint and DMS tolerance computed per SpCas9 domain. |
+| `per_domain_correlations.csv` | Spearman correlation between VESM substitution intolerance and DMS tolerance computed per SpCas9 domain. |
 
 #### `AI-validation-[CB,VESM]/CB_directionality/`
 | File | Description |

@@ -57,5 +57,5 @@ This file is processed by `scripts/Figure4/plot_ss_heatmap.py` and `scripts/Figu
 
 ## Notes
 
-- MD trajectories (`.xtc` / `.trr`) and topology files (`.tpr`) are **not** included in this repository due to file size. They are deposited at [Zenodo / Figshare — DOI: **[add DOI]**].
+- MD trajectories (`.xtc` / `.trr`) and topology files (`.tpr`) are **not** included in this repository due to file size. They are deposited on Zenodo under the version-independent DOI [10.5281/zenodo.21065807](https://doi.org/10.5281/zenodo.21065807).
 - The `build_network.py` script in `scripts/Figure6/` requires the original trajectory files to regenerate the `.pkl` graphs; all pre-computed `.pkl` files are already provided in `data/GCCM_network/gccm/`.

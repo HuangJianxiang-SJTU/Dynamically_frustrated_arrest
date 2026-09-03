@@ -1,7 +1,7 @@
 # scripts/supplementary/ — Supplementary Figure Scripts & AI Validation Pipeline
 
 ## Purpose
-Contains scripts for supplementary figures and the end-to-end AI validation pipeline that scores SpCas9 variants using ProteinMPNN (CB) and VESM-3B, then integrates results with MD-derived hub data and published DMS data.
+Contains scripts for supplementary figures and the end-to-end AI validation pipeline that scores SpCas9 variants using ProteinMPNN (CB) and VESM, then integrates results with MD-derived hub data and published DMS data.
 
 ## Sub-folder Structure
 
@@ -14,6 +14,7 @@ supplementary/
 │   │   └── run_CB_SpCas9.py
 │   ├── plot_CB_state_bias_2rows.py
 │   └── plot_integrated_rank.py
+└── build_md_key_residue_table.py
 ```
 
 ---
@@ -26,7 +27,7 @@ Run scripts in this order:
 Prepares and cleans SpCas9 PDB structures for each R-loop state. Removes non-protein atoms, renumbers residues, and saves cleaned PDBs to `data/AI-validation-[CB,VESM]/raw_pdb/`.
 
 ### Step 2 — `SpCas9_VESM_score.py`
-Runs saturation mutagenesis scoring using the VESM-3B model (ESM2-3B backbone + Ntranos lab distilled weights).
+Runs saturation mutagenesis scoring using the VESM model (ESM2-3B backbone + Ntranos lab distilled weights).
 
 **Usage:**
 ```bash
@@ -59,7 +60,7 @@ Generates a two-row supplementary panel showing the directional bias of ProteinM
 
 ### `plot_integrated_rank.py`
 Generates the integrated CB + VESM + MD percentile rank figure (Figure S — integrated validation):
-- Panel A: Scatter of CB percentile vs VESM percentile, dot size = number of MD hub states, coloured by evidence count.
+- Panel A: Scatter of CB percentile vs VESM substitution-intolerance percentile, dot size = number of supporting MD evidence categories, coloured by evidence count.
 - Panel B: Top 30 residues by combined score, stacked bar of percentile contributions.
 
 **Inputs:**
@@ -67,7 +68,10 @@ Generates the integrated CB + VESM + MD percentile rank figure (Figure S — int
 - `data/AI-validation-[CB,VESM]/SpCas9_VESM3B_full_position_summary.csv`
 - `data/Interaction_Network/SB_All_Dynamic_Hubs_Ranked.csv`
 
-**Output:** `figures/supplenmentary/CB_VESM_DMS.png`
+**Output:** `Integrated_Rank.png/.pdf` in the working directory.
+
+### `build_md_key_residue_table.py`
+Applies the revision's cross-method filter to `full_superset.csv`. The five category sizes are 84, 54, 46, 90, and 89; their union contains 311 residues. Requiring at least two supporting categories produces `MD_key_residues_multi_evidence.csv` with 52 residues.
 
 ## Execution
 
@@ -83,6 +87,7 @@ python run_CB_SpCas9.py
 
 ```bash
 cd data/AI-validation-[CB,VESM]
+python ../../scripts/supplementary/build_md_key_residue_table.py
 python ../../scripts/supplementary/AI-dms-validation/plot_CB_state_bias_2rows.py
 python ../../scripts/supplementary/AI-dms-validation/plot_integrated_rank.py
 ```

@@ -1,0 +1,4 @@
+position,wt,Domain,mean_CB_force,constraint,DMS_tol_median,DMS_n_mutations,DMS_n_tolerated,Hub_Overlap_Count,MD_Roles
+1210,R,PI,0.2950152013723137,0.5977753714511269,0.5202595035,2,2,2,Structural_Switch | SaltBridge_Hub
+271,Y,REC2,0.0583926640518622,2.919218634304247,2.807240157,1,1,2,Structural_Switch | Centrality_Hub
+625,L,REC3,0.0578805896911472,1.9664286814237897,0.020144816499999996,2,1,2,Structural_Switch | Hydrophobic_Hub

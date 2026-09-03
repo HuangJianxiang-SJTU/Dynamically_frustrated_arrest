@@ -1,11 +1,11 @@
 """
-Figure 9: CB vs VESM Discordance Analysis
+Figure 7: CB vs VESM Discordance Analysis
 ------------------------------------------
-Panel A: CB driving force vs VESM evolutionary constraint scatter,
+Panel A: CB driving force vs VESM substitution-intolerance scatter,
          colored by MD hub category, quadrant crosshairs at medians.
 Panel B: Quadrant composition bar (total / MD-annotated / super-hub).
 
-Style: Helvetica, no panel titles, dpi=600, legend below panel A.
+Style: Helvetica, panel titles A/B, dpi=600, legend below panel A.
 """
 
 import os
@@ -26,6 +26,9 @@ mpl.rcParams['font.sans-serif'] = ['Helvetica', 'Arial', 'DejaVu Sans']
 # ==========================================
 STEPWISE_PAIRS = ["6_vs_8", "8_vs_10", "10_vs_12", "12_vs_14", "14_vs_16", "16_vs_18"]
 VESM_FILE = "SpCas9_VESM3B_full_position_summary.csv"
+MD_FILE = "full_superset.csv"
+OUTPUT_DIR = "CB_VESM_discordance"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 C_BG     = '#BBBBBB'
 C_SINGLE = '#4E79A7'
@@ -35,7 +38,6 @@ C_MULTI  = '#E15759'
 # 1. CB: mean stepwise driving force
 # ==========================================
 dfs_all = []   # all positions (for background scatter)
-dfs_md  = []   # MD-annotated positions only (for quadrant/enrichment)
 for pair in STEPWISE_PAIRS:
     path = f"CB_results_{pair}_proteinmpnn/position_summary.csv"
     if not os.path.exists(path):
@@ -44,8 +46,6 @@ for pair in STEPWISE_PAIRS:
     tmp = pd.read_csv(path)
     tmp['driving_force'] = -tmp['CB_bias_zscore']
     dfs_all.append(tmp[['position', 'wt', 'driving_force']])
-    dfs_md.append(tmp[['position', 'wt', 'is_MD_switch', 'MD_Roles',
-                        'Hub_Overlap_Count', 'driving_force']])
 
 # All positions aggregated (for scatter background)
 cb_all = (pd.concat(dfs_all)
@@ -53,19 +53,37 @@ cb_all = (pd.concat(dfs_all)
           .rename(columns={'driving_force': 'mean_CB_force'}))
 print(f"CB all positions: {len(cb_all)}")
 
-# MD-annotated positions aggregated (for quadrant bars and labels)
-cb_agg = (pd.concat(dfs_md)
-          .groupby(['position', 'wt', 'is_MD_switch', 'MD_Roles', 'Hub_Overlap_Count'],
-                   as_index=False)['driving_force'].mean()
-          .rename(columns={'driving_force': 'mean_CB_force'}))
-print(f"CB MD positions: {len(cb_agg)}")
+# Use the verified one-row-per-residue MD table as annotation source. Historical
+# CB result files contain two names for the switch category, which must not be
+# allowed to duplicate positions during aggregation.
+md = pd.read_csv(MD_FILE)
+category_labels = {
+    'Switch': 'Structural_Switch',
+    'GCCM': 'GCCM_Hub',
+    'SB_hub': 'SaltBridge_Hub',
+    'Hydro_hub': 'Hydrophobic_Hub',
+    'BC': 'Centrality_Hub',
+}
+md['Hub_Overlap_Count'] = md[list(category_labels)].eq('Y').sum(axis=1)
+md['MD_Roles'] = md.apply(
+    lambda row: ' | '.join(
+        label for column, label in category_labels.items() if row[column] == 'Y'
+    ),
+    axis=1,
+)
+md['is_MD_switch'] = md['Hub_Overlap_Count'] > 0
+md_meta = md.rename(columns={'Residue': 'position'})[
+    ['position', 'is_MD_switch', 'MD_Roles', 'Hub_Overlap_Count']
+]
+print(f"MD union: {len(md_meta)} positions; "
+      f"multi-evidence set: {(md_meta['Hub_Overlap_Count'] >= 2).sum()}")
 
 # ==========================================
 # 2. VESM
 # ==========================================
 vesm = pd.read_csv(VESM_FILE)
-vesm['constraint'] = -vesm['mean_LLR']
-vesm_sub = vesm[['position', 'constraint']].copy()
+vesm['vesm_substitution_intolerance'] = -vesm['mean_LLR']
+vesm_sub = vesm[['position', 'vesm_substitution_intolerance']].copy()
 print(f"VESM: {len(vesm_sub)} positions")
 
 # ==========================================
@@ -73,31 +91,36 @@ print(f"VESM: {len(vesm_sub)} positions")
 # ==========================================
 # Full scatter merge: all positions with both CB and VESM scores
 merged_full = pd.merge(cb_all, vesm_sub, on='position', how='inner')
-# Also merge MD metadata in for coloring
-merged_full = pd.merge(merged_full, cb_agg[['position','is_MD_switch','MD_Roles','Hub_Overlap_Count']],
-                       on='position', how='left')
+# Add one verified MD metadata record per position for coloring and filtering.
+merged_full = pd.merge(merged_full, md_meta, on='position', how='left',
+                       validate='one_to_one')
 merged_full['Hub_Overlap_Count'] = merged_full['Hub_Overlap_Count'].fillna(0).astype(int)
+merged_full['is_MD_switch'] = merged_full['Hub_Overlap_Count'] > 0
+merged_full['MD_Roles'] = merged_full['MD_Roles'].fillna('')
+if len(merged_full) != 1368 or not merged_full['position'].is_unique:
+    raise ValueError("Expected one merged record for each of 1,368 SpCas9 positions")
 print(f"Merged full (scatter): {len(merged_full)} positions")
 
 # Quadrant analysis on the same full set
 cb_med  = merged_full['mean_CB_force'].median()
-ves_med = merged_full['constraint'].median()
+ves_med = merged_full['vesm_substitution_intolerance'].median()
 merged_quad = merged_full  # alias for downstream code
 
 cb_med  = merged_quad['mean_CB_force'].median()
-ves_med = merged_quad['constraint'].median()
+ves_med = merged_quad['vesm_substitution_intolerance'].median()
 
 def assign_quadrant(row):
     hi_cb  = row['mean_CB_force'] > cb_med
-    hi_ves = row['constraint'] > ves_med
+    hi_ves = row['vesm_substitution_intolerance'] > ves_med
     if   hi_cb and hi_ves:      return 'Q1_core_driver'
     elif not hi_cb and hi_ves:  return 'Q2_functional_invariant'
     elif hi_cb and not hi_ves:  return 'Q4_plastic_driver'
     else:                       return 'Q3_background'
 
 merged_quad['quadrant'] = merged_quad.apply(assign_quadrant, axis=1)
-merged_quad.to_csv("cb_vesm_quadrant_table.csv", index=False)
-print("Saved: cb_vesm_quadrant_table.csv")
+quadrant_output = os.path.join(OUTPUT_DIR, "cb_vesm_quadrant_table.csv")
+merged_quad.to_csv(quadrant_output, index=False)
+print(f"Saved: {quadrant_output}")
 
 print("\nQuadrant counts:")
 print(merged_quad['quadrant'].value_counts())
@@ -111,8 +134,8 @@ for q in ['Q1_core_driver', 'Q2_functional_invariant', 'Q4_plastic_driver', 'Q3_
 # ==========================================
 # 4. CORRELATION
 # ==========================================
-r_p, p_p = pearsonr(merged_quad['mean_CB_force'], merged_quad['constraint'])
-r_s, p_s = spearmanr(merged_quad['mean_CB_force'], merged_quad['constraint'])
+r_p, p_p = pearsonr(merged_quad['mean_CB_force'], merged_quad['vesm_substitution_intolerance'])
+r_s, p_s = spearmanr(merged_quad['mean_CB_force'], merged_quad['vesm_substitution_intolerance'])
 print(f"\nPearson  r = {r_p:.3f}, p = {p_p:.2e}")
 print(f"Spearman r = {r_s:.3f}, p = {p_s:.2e}")
 
@@ -120,7 +143,7 @@ print(f"Spearman r = {r_s:.3f}, p = {p_s:.2e}")
 # 5. FIGURE
 # ==========================================
 fig = plt.figure(figsize=(18, 7))
-gs  = fig.add_gridspec(1, 2, width_ratios=[2.5, 1], wspace=0.28)
+gs  = fig.add_gridspec(1, 2, width_ratios=[2.5, 1], wspace=0.34)
 ax_main = fig.add_subplot(gs[0])
 ax_quad = fig.add_subplot(gs[1])
 
@@ -129,13 +152,13 @@ bg     = merged_quad[merged_quad['Hub_Overlap_Count'] == 0]
 single = merged_quad[merged_quad['Hub_Overlap_Count'] == 1]
 multi  = merged_quad[merged_quad['Hub_Overlap_Count'] >= 2]
 
-ax_main.scatter(bg['mean_CB_force'],     bg['constraint'],
+ax_main.scatter(bg['mean_CB_force'],     bg['vesm_substitution_intolerance'],
                 s=8,  c=C_BG,     alpha=0.35, lw=0, zorder=1,
                 label=f'Non-hub residues (n={len(bg)})')
-ax_main.scatter(single['mean_CB_force'], single['constraint'],
+ax_main.scatter(single['mean_CB_force'], single['vesm_substitution_intolerance'],
                 s=22, c=C_SINGLE, alpha=0.70, lw=0, zorder=2,
                 label=f'Single-category MD hub (n={len(single)})')
-ax_main.scatter(multi['mean_CB_force'],  multi['constraint'],
+ax_main.scatter(multi['mean_CB_force'],  multi['vesm_substitution_intolerance'],
                 s=70, c=C_MULTI,  alpha=0.95, edgecolors='black', lw=0.7,
                 zorder=4, label=f'Multi-category MD hub / super-hub (n={len(multi)})')
 
@@ -145,7 +168,8 @@ ax_main.axhline(ves_med, color='#444444', ls='--', lw=1.0, alpha=0.6)
 
 # Quadrant labels
 x_min, x_max = merged_quad['mean_CB_force'].min(), merged_quad['mean_CB_force'].max()
-y_min, y_max = merged_quad['constraint'].min(),    merged_quad['constraint'].max()
+y_min, y_max = (merged_quad['vesm_substitution_intolerance'].min(),
+                merged_quad['vesm_substitution_intolerance'].max())
 px = (x_max - x_min) * 0.02
 py = (y_max - y_min) * 0.02
 
@@ -165,7 +189,7 @@ ax_main.text(x_min + px, y_min + py, 'Q3: Background\n(low CB, low VESM)',
 # Label super-hubs
 texts = []
 for _, row in multi.iterrows():
-    t = ax_main.text(row['mean_CB_force'], row['constraint'],
+    t = ax_main.text(row['mean_CB_force'], row['vesm_substitution_intolerance'],
                      f"{row['wt']}{int(row['position'])}",
                      fontsize=9, fontweight='bold', color='#8B0000')
     texts.append(t)
@@ -181,14 +205,14 @@ ax_main.text(0.97, 0.75,
              bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.85))
 
 ax_main.set_xlabel('Mean CB Driving Force (stepwise)', fontsize=20)
-ax_main.set_ylabel('Evolutionary Constraint (\u2212mean LLR)', fontsize=20)
+ax_main.set_ylabel('VESM Substitution Intolerance (\u2212meanLLR)', fontsize=20)
 ax_main.tick_params(labelsize=18)
 ax_main.spines['top'].set_visible(False)
 ax_main.spines['right'].set_visible(False)
 
 # Legend below panel A
-ax_main.legend(loc='upper center', bbox_to_anchor=(0.5, -0.12),
-               fontsize=13, frameon=False, ncol=3)
+ax_main.legend(loc='upper center', bbox_to_anchor=(0.44, -0.12),
+               fontsize=12, frameon=False, ncol=3)
 
 # --- Panel B: quadrant composition bar ---
 q_keys   = ['Q1_core_driver', 'Q2_functional_invariant', 'Q4_plastic_driver', 'Q3_background']
@@ -229,9 +253,13 @@ ax_quad.tick_params(axis='y', labelsize=16)
 ax_quad.spines['top'].set_visible(False)
 ax_quad.spines['right'].set_visible(False)
 
-plt.savefig('CB_VESM_Discordance.png', dpi=600, bbox_inches='tight')
-plt.savefig('CB_VESM_Discordance.pdf', bbox_inches='tight')
-print("\nSaved: CB_VESM_Discordance.png/.pdf")
+ax_main.set_title('A', loc='left', fontsize=24, fontweight='bold')
+ax_quad.set_title('B', loc='left', fontsize=24, fontweight='bold')
+plt.savefig(os.path.join(OUTPUT_DIR, 'CB_VESM_Discordance.png'),
+            dpi=600, bbox_inches='tight')
+plt.savefig(os.path.join(OUTPUT_DIR, 'CB_VESM_Discordance.pdf'),
+            bbox_inches='tight')
+print(f"\nSaved: {OUTPUT_DIR}/CB_VESM_Discordance.png/.pdf")
 plt.close()
 
 # ==========================================
@@ -242,5 +270,5 @@ for key, label in zip(q_keys, q_labels):
     sub = merged_quad[(merged_quad['quadrant'] == key) & (merged_quad['Hub_Overlap_Count'] >= 1)]
     sub = sub.sort_values('mean_CB_force', ascending=False).head(10)
     print(f"\n--- {label.replace(chr(10), ' ')} ---")
-    print(sub[['position', 'wt', 'mean_CB_force', 'constraint',
+    print(sub[['position', 'wt', 'mean_CB_force', 'vesm_substitution_intolerance',
                'Hub_Overlap_Count', 'MD_Roles']].to_string(index=False))

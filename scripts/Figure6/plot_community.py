@@ -1,7 +1,8 @@
 """
-Community Membership Heatmap (Figure 7D) + Community Sizes (SI)
+Community Membership Heatmap (Figure 6D) + Community Sizes (SI)
 Shared color scheme for consistency.
-Reads from community_summary.txt — no recomputation.
+Reads the deposited weighted Girvan–Newman assignments from
+community_summary.txt; this plotting script does not recompute communities.
 """
 
 import numpy as np
@@ -138,7 +139,7 @@ print(f"Parsed {len(all_mems)} states")
 # ==========================================
 # 4. FIGURE 7D: COMMUNITY MEMBERSHIP HEATMAP
 # ==========================================
-print("Generating community membership heatmap...")
+print("Generating weighted Girvan–Newman community membership heatmap...")
 
 groups = list(KEY_GROUPS.items())
 ng = len(groups)

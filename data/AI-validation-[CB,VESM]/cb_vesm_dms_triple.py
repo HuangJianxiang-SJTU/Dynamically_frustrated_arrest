@@ -38,7 +38,7 @@ mpl.rcParams['font.sans-serif'] = ['Helvetica', 'Arial', 'DejaVu Sans']
 # ==========================================
 # CONFIG
 # ==========================================
-QUADRANT_TABLE = "cb_vesm_quadrant_table.csv"      # produced by Figure 9 script
+QUADRANT_TABLE = "cb_vesm_quadrant_table.csv"      # produced by Figure 7 script
 DMS_FILE       = "../DMS_reference/spencer-zhang-data.csv"  # Spencer & Zhang 2017 supp
 
 # For position-level tolerance, require at least this many mutations
@@ -110,6 +110,8 @@ print(f"  median mutations/position = {agg['DMS_n_mutations'].median():.1f}")
 # 2. MERGE WITH CB x VESM QUADRANT TABLE
 # ==========================================
 quad = pd.read_csv(QUADRANT_TABLE)
+if 'constraint' not in quad.columns and 'vesm_substitution_intolerance' in quad.columns:
+    quad = quad.rename(columns={'vesm_substitution_intolerance': 'constraint'})
 # Expected columns from Figure 9 script:
 #   position, wt, mean_CB_force, constraint, Hub_Overlap_Count,
 #   is_MD_switch, MD_Roles, quadrant
@@ -230,7 +232,7 @@ for pos, label in fidelity_positions.items():
 # 6. FIGURE
 # ==========================================
 fig = plt.figure(figsize=(18, 6.5))
-gs  = fig.add_gridspec(1, 3, width_ratios=[1.0, 1.4, 1.4], wspace=0.30)
+gs  = fig.add_gridspec(1, 3, width_ratios=[1.0, 1.4, 1.4], wspace=0.42)
 ax_box = fig.add_subplot(gs[0])
 ax_sc1 = fig.add_subplot(gs[1])
 ax_sc2 = fig.add_subplot(gs[2])
@@ -261,7 +263,7 @@ for i, (d, c) in enumerate(zip(data, colors)):
 
 ax_box.axhline(0, color='#444444', ls='--', lw=0.9, alpha=0.7)
 ax_box.set_xticks(range(len(order)))
-ax_box.set_xticklabels(labels, fontsize=12)
+ax_box.set_xticklabels(labels, fontsize=11, rotation=15, ha='right')
 ax_box.set_ylabel('DMS tolerance (median log$_2$FC, positive selection)',
                   fontsize=15)
 ax_box.tick_params(axis='y', labelsize=13)
@@ -297,7 +299,7 @@ if len(priority) > 0:
                         fontsize=9, fontweight='bold', color='#8B4500')
 
 cb = fig.colorbar(sc, ax=ax_sc1, pad=0.02, fraction=0.045)
-cb.set_label('VESM constraint (−LLR)', fontsize=12)
+cb.set_label('VESM substitution\nintolerance (−meanLLR)', fontsize=12)
 cb.ax.tick_params(labelsize=10)
 
 ax_sc1.set_xlabel('Mean CB driving force (stepwise)', fontsize=14)
@@ -336,18 +338,20 @@ cb2 = fig.colorbar(sc2, ax=ax_sc2, pad=0.02, fraction=0.045)
 cb2.set_label('CB driving force', fontsize=12)
 cb2.ax.tick_params(labelsize=10)
 
-ax_sc2.set_xlabel('VESM constraint (−LLR)', fontsize=14)
+ax_sc2.set_xlabel('VESM Substitution Intolerance (−meanLLR)', fontsize=14)
 ax_sc2.set_ylabel('DMS tolerance (median log$_2$FC)', fontsize=14)
 ax_sc2.tick_params(labelsize=12)
 ax_sc2.spines['top'].set_visible(False)
 ax_sc2.spines['right'].set_visible(False)
 
 ax_sc2.text(0.98, 0.97,
-            f"ρ(DMS, VESM −LLR) = {r_dms_ves:+.3f}\n(expected negative)",
+            f"ρ(DMS, VESM −meanLLR) = {r_dms_ves:+.3f}\n(expected negative)",
             transform=ax_sc2.transAxes, fontsize=10, va='top', ha='right',
             bbox=dict(boxstyle='round,pad=0.3', facecolor='white',
                       alpha=0.85, edgecolor='#AAAAAA'))
 
+for _ax,_lab in zip((ax_box,ax_sc1,ax_sc2),'ABC'):
+    _ax.set_title(_lab, loc='left', fontsize=20, fontweight='bold')
 plt.savefig('CB_VESM_DMS.png', dpi=600, bbox_inches='tight')
 plt.savefig('CB_VESM_DMS.pdf', bbox_inches='tight')
 plt.close()
